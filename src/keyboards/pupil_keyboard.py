@@ -6,9 +6,9 @@ school_types_buttons = {"school": "🏫 Школа", "lyceum": "🏫 Лицей"
 
 def pupil_age_keyboard():
     pupil_age_keyboard_builder = ReplyKeyboardBuilder()
-    for age in range(6, 25):
+    for age in range(6, 24):
         button = KeyboardButton(text=str(age))
-        if age in [10, 15, 20]:
+        if age in [11, 15, 20]:
             pupil_age_keyboard_builder.row(button)
         else:
             pupil_age_keyboard_builder.add(button)
