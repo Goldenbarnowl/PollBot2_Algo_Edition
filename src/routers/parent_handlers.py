@@ -18,9 +18,10 @@ from src.keyboards.parent_keyboards import new_children_keyboard, new_children_b
 from src.keyboards.pupil_keyboard import pupil_school_type_keyboard, school_types_buttons, school_keyboard, \
     lyceum_keyboard, gymnasium_keyboard, school_buttons, gymnasium_buttons, lyceum_buttons, grade_keyboard, \
     request_keyboard, answer_buttons, university_keyboard, university_list, answer_q6, keyboard_q6, answer_q5, \
-    keyboard_q5, answer_q4, keyboard_q4, answer_q3, keyboard_q3, pupil_age_keyboard
+    keyboard_q5, answer_q4, keyboard_q4, answer_q3, keyboard_q3, pupil_age_keyboard, collage_keyboard, collage_buttons
 from src.keyboards.user_keyboards import role_buttons
 from src.routers.last_stand import db_checker
+from src.routers.pupil_handlers import validate_phone_number
 from src.states.parent_states import Parent
 from src.states.user_states import User
 
@@ -31,7 +32,7 @@ parent_router = Router()
 async def handle_parent_role(message: Message, state: FSMContext):
     """Обрабатывает роль пользователя - родитель"""
 
-    await state.set_state(Parent.wait_children_name)
+    await state.set_state(Parent.wait_contact_phone)
 
     chat_id = message.chat.id
 
@@ -44,10 +45,36 @@ async def handle_parent_role(message: Message, state: FSMContext):
 
     await bot.send_message(
         chat_id=chat_id,
-        text=PCHILDREN_NAME,
+        text="Введите ваш контактный номер телефона.",
         reply_markup=ReplyKeyboardRemove()
     )
+    # await bot.send_message(
+    #     chat_id=chat_id,
+    #     text=PCHILDREN_NAME,
+    #     reply_markup=ReplyKeyboardRemove()
+    # )
     await db_checker(message)
+
+
+
+@parent_router.message(StateFilter(Parent.wait_contact_phone))
+async def handle_parent_phone(message: Message, state: FSMContext):
+    chat_id = message.chat.id
+    phone = message.text
+    if validate_phone_number(phone):
+
+        await state.set_state(Parent.wait_children_name)
+        parent_data_repo.update_field(chat_id, "phone", phone)
+        await bot.send_message(
+            chat_id=chat_id,
+            text=PCHILDREN_NAME,
+            reply_markup=ReplyKeyboardRemove()
+        )
+    else:
+        await bot.send_message(
+            chat_id=chat_id,
+            text="Неправильный формат номера. Попробуйте ещё раз. (в формате 7XXXXXXXXXX)"
+        )
 
 
 @parent_router.message(StateFilter(Parent.wait_children_name))
@@ -99,7 +126,7 @@ async def handle_parent_age(message: Message, state: FSMContext):
         )
 
 
-@parent_router.message(StateFilter(Parent.wait_school_type), F.text.in_([school_types_buttons['school'], school_types_buttons['lyceum'], school_types_buttons['gymnasium']]))
+@parent_router.message(StateFilter(Parent.wait_school_type), F.text.in_([school_types_buttons['school'], school_types_buttons['lyceum'], school_types_buttons['gymnasium'], school_types_buttons['collage']]))
 async def handle_parent_school_type(message: Message, state: FSMContext):
     """Обрабатывает тип школы пользователя - ученик"""
 
@@ -129,6 +156,13 @@ async def handle_parent_school_type(message: Message, state: FSMContext):
             reply_markup=gymnasium_keyboard()
         )
 
+    elif school_type == school_types_buttons['collage']:
+        await bot.send_message(
+            chat_id=chat_id,
+            text=SCHOOL_REQUEST,
+            reply_markup=collage_keyboard()
+        )
+
 
 @parent_router.message(StateFilter(Parent.wait_school), F.text == school_buttons[0])
 async def handle_parent_back_school_type(message: Message, state: FSMContext):
@@ -140,7 +174,6 @@ async def handle_parent_back_school_type(message: Message, state: FSMContext):
         reply_markup=pupil_school_type_keyboard()
     )
 
-
 @parent_router.message(StateFilter(Parent.wait_school))
 async def handle_parent_school(message: Message, state: FSMContext):
     """Обрабатывает учебное заведение пользователя - ученик"""
@@ -148,16 +181,23 @@ async def handle_parent_school(message: Message, state: FSMContext):
     chat_id = message.chat.id
     school = message.text
 
-    if (school in school_buttons) or (school in gymnasium_buttons) or (school in lyceum_buttons):
+    if (school in school_buttons) or (school in gymnasium_buttons) or (school in lyceum_buttons) or (school in collage_buttons):
 
         await state.set_state(Parent.wait_grade)
         pchildren_data_repo.update_field(chat_id, "school", school)
 
-        await bot.send_message(
-            chat_id=chat_id,
-            text=PARENT_GRADE_REQUEST,
-            reply_markup=grade_keyboard()
-        )
+        if school in collage_buttons:
+            await bot.send_message(
+                chat_id=chat_id,
+                text="На каком курсе учится ваш ребенок?",
+                reply_markup=grade_keyboard(5)
+            )
+        else:
+            await bot.send_message(
+                chat_id=chat_id,
+                text=PARENT_GRADE_REQUEST,
+                reply_markup=grade_keyboard(12)
+            )
 
     else:
         await bot.send_message(
@@ -165,9 +205,10 @@ async def handle_parent_school(message: Message, state: FSMContext):
             text=ERROR_SCHOOL
         )
 
-
 @parent_router.message(StateFilter(Parent.wait_grade))
-async def handle_parent_grade(message: Message, state: FSMContext):
+async def handle_pupil_grade(message: Message, state: FSMContext):
+    """Обрабатывает класс в школе пользователя - ученик"""
+
     chat_id = message.chat.id
     grade = message.text
 
@@ -178,13 +219,9 @@ async def handle_parent_grade(message: Message, state: FSMContext):
         else:
             raise ValueError
         await state.set_state(Parent.wait_exam)
-        if grade > 9:
-            exam = "ЕГЭ по информатике?"
-        else:
-            exam = "ОГЭ по информатике?"
         await bot.send_message(
             chat_id=chat_id,
-            text=EXAM_REQUEST+exam,
+            text="Рассматриваете ли вы для своего ребенка будущее в сфере информационных технологий?",
             reply_markup=request_keyboard()
         )
     except:
@@ -195,55 +232,26 @@ async def handle_parent_grade(message: Message, state: FSMContext):
 
 
 @parent_router.message(StateFilter(Parent.wait_exam))
-async def handle_parent_exam(message: Message, state: FSMContext):
-    """Обрабатывает вопрос о сдаче экзамена пользователя"""
+async def handle_pupil_exam(message: Message, state: FSMContext):
+    """Обрабатывает вопрос о сдаче экзамена пользователя - ученик"""
 
     chat_id = message.chat.id
     exam = message.text
     if exam in answer_buttons:
-        await state.set_state(Parent.wait_arrival)
-        pchildren_data_repo.update_field(chat_id, "exam", exam)
+        pchildren_data_repo.update_field(chat_id, "IT_live", exam)
+        await state.set_state(Parent.wait_university)
+        await state.update_data(check_list=list())
         await bot.send_message(
             chat_id=chat_id,
-            text=UNIVERSITY_REQUEST,
-            reply_markup=request_keyboard()
+            text="Укажите, в какой ВУЗ или СУЗ планирует поступать ребёнок. (не более 3 вариантов)",
+            reply_markup=ReplyKeyboardRemove()
         )
-
-    else:
         await bot.send_message(
             chat_id=chat_id,
-            text=ERROR_BUTTON
+            text=GUIDE_UNIVERSITY,
+            reply_markup=university_keyboard(set())
         )
 
-
-@parent_router.message(StateFilter(Parent.wait_arrival))
-async def handle_parent_university(message: Message, state: FSMContext):
-    """Обрабатывает вопрос о поступлении в ВУЗ"""
-
-    chat_id = message.chat.id
-    arrival = message.text
-    if arrival in answer_buttons:
-        pchildren_data_repo.update_field(chat_id, "arrival", arrival)
-        if arrival == answer_buttons[0]:
-            await state.set_state(Parent.wait_university)
-            await state.update_data(check_list=list())
-            await bot.send_message(
-                chat_id=chat_id,
-                text=UNIVERSITY_LIST_REQUEST,
-                reply_markup=ReplyKeyboardRemove()
-            )
-            await bot.send_message(
-                chat_id=chat_id,
-                text=GUIDE_UNIVERSITY,
-                reply_markup=university_keyboard(set())
-            )
-        else:
-            await state.set_state(Parent.wait_q2)
-            await bot.send_message(
-                chat_id=chat_id,
-                text=PUPIL_Q2,
-                reply_markup=request_keyboard()
-            )
     else:
         await bot.send_message(
             chat_id=chat_id,
@@ -270,7 +278,9 @@ async def handle_check_university_next(callback: CallbackQuery, state: FSMContex
         for i in range(len(university_list)):
             if i in check_list:
                 data_base_university += university_list[i]+"; "
+
         pchildren_data_repo.update_field(chat_id, "university", data_base_university)
+
         await bot.edit_message_text(
             chat_id=chat_id,
             text="Вы выбрали:\n"+data_base_university,
@@ -279,7 +289,7 @@ async def handle_check_university_next(callback: CallbackQuery, state: FSMContex
         )
         await bot.send_message(
             chat_id=chat_id,
-            text=PUPIL_Q1,
+            text=PARENTS_Q3,
             reply_markup=request_keyboard()
         )
 
@@ -288,15 +298,21 @@ async def handle_check_university_next(callback: CallbackQuery, state: FSMContex
 async def handle_check_university(callback: CallbackQuery, state: FSMContext):
     chat_id = callback.message.chat.id
     university = callback.data
+
     try:
         state_data = await state.get_data()
         check_list = set(state_data['check_list'])
     except:
         check_list = set()
+
     if int(university) in check_list:
         check_list.remove(int(university))
     else:
-        check_list.add(int(university))
+        if len(check_list) < 3:
+            check_list.add(int(university))
+        else:
+            await callback.answer("❗️ Можно выбрать не более 3 учебных заведений", show_alert=True)
+
     await state.update_data(check_list=list(check_list))
     await bot.edit_message_reply_markup(
         chat_id=chat_id,
@@ -305,49 +321,49 @@ async def handle_check_university(callback: CallbackQuery, state: FSMContext):
     )
 
 
+# @parent_router.message(StateFilter(Parent.wait_q1))
+# async def handle_parent_q1(message: Message, state: FSMContext):
+#     """Планируете поступление на техническую специальность - ученик"""
+#
+#     chat_id = message.chat.id
+#     answer = message.text
+#     if answer in answer_buttons:
+#         await state.set_state(Parent.wait_q2)
+#         pchildren_data_repo.update_field(chat_id, "technical_specialty", answer)
+#         await bot.send_message(
+#             chat_id=chat_id,
+#             text=PARENTS_Q2,
+#             reply_markup=request_keyboard()
+#         )
+#
+#     else:
+#         await bot.send_message(
+#             chat_id=chat_id,
+#             text=ERROR_BUTTON
+#         )
+#
+#
+# @parent_router.message(StateFilter(Parent.wait_q2))
+# async def handle_parent_q2(message: Message, state: FSMContext):
+#     chat_id = message.chat.id
+#     answer = message.text
+#     if answer in answer_buttons:
+#         await state.set_state(Parent.wait_q3)
+#         pchildren_data_repo.update_field(chat_id, "IT_live", answer)
+#         await bot.send_message(
+#             chat_id=chat_id,
+#             text=PARENTS_Q3,
+#             reply_markup=request_keyboard()
+#         )
+#
+#     else:
+#         await bot.send_message(
+#             chat_id=chat_id,
+#             text=ERROR_BUTTON
+#         )
+
+
 @parent_router.message(StateFilter(Parent.wait_q1))
-async def handle_parent_q1(message: Message, state: FSMContext):
-    """Планируете поступление на техническую специальность - ученик"""
-
-    chat_id = message.chat.id
-    answer = message.text
-    if answer in answer_buttons:
-        await state.set_state(Parent.wait_q2)
-        pchildren_data_repo.update_field(chat_id, "technical_specialty", answer)
-        await bot.send_message(
-            chat_id=chat_id,
-            text=PARENTS_Q2,
-            reply_markup=request_keyboard()
-        )
-
-    else:
-        await bot.send_message(
-            chat_id=chat_id,
-            text=ERROR_BUTTON
-        )
-
-
-@parent_router.message(StateFilter(Parent.wait_q2))
-async def handle_parent_q2(message: Message, state: FSMContext):
-    chat_id = message.chat.id
-    answer = message.text
-    if answer in answer_buttons:
-        await state.set_state(Parent.wait_q3)
-        pchildren_data_repo.update_field(chat_id, "IT_live", answer)
-        await bot.send_message(
-            chat_id=chat_id,
-            text=PARENTS_Q3,
-            reply_markup=request_keyboard()
-        )
-
-    else:
-        await bot.send_message(
-            chat_id=chat_id,
-            text=ERROR_BUTTON
-        )
-
-
-@parent_router.message(StateFilter(Parent.wait_q3))
 async def handle_parent_q3(message: Message, state: FSMContext):
     chat_id = message.chat.id
     answer = message.text
@@ -491,7 +507,7 @@ async def handle_parent_q9(message: Message, state: FSMContext):
                     f"\nФИО: {user_data['name']}"
                     f"\nРоль: {role_buttons['parent']}"
                     f"\nТелефон: +{user_data['tg_phone']}"
-                    f"\nПоддержка ребенка в IT: {parent_data['support_children']}"
+                    f"\nКонтактный номер: +{parent_data['phone']}\n"
                     f"\nОпыт в IT: {parent_data['it_experience']}"
                     f"\nПреимущества ребенка в IT: {parent_data['child_advantages']}"
                     f"\nПолезные навыки в IT: {parent_data['useful_skills']}"
@@ -506,13 +522,10 @@ async def handle_parent_q9(message: Message, state: FSMContext):
                         f"\nИмя ребенка: {pchildren['children_name']}"
                         f"\nВозраст: {pchildren['age']}"
                         f"\nШкола: {pchildren['school']}"
-                        f"\nКласс: {pchildren['grade']}"
-                        f"\nЕГЭ/ОГЭ: {pchildren['exam']}"
-                        f"\nПоступление в ВУЗ: {pchildren['arrival']}"
+                        f"\nКласс/Курс: {pchildren['grade']}"
                         f"\nУниверситеты: {pchildren['university']}"
-                        f"\nТехническая специальность: {pchildren['technical_specialty']}"
                         f"\nСвязать жизнь с IT: {pchildren['IT_live']}"
-                        f"\nЗанимается ли ребенок IT: {pchildren['training_IT']}")
+                        f"\nЗанимается ли ребенок IT дополнительно: {pchildren['training_IT']}")
                 await bot.send_message(chat_id=admin_group,
                                        message_thread_id=parent_thread,
                                        text=text

@@ -2,6 +2,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class Parent(StatesGroup):
+    wait_contact_phone = State()
     wait_children_name = State()
     wait_age = State()
     wait_school_type = State()

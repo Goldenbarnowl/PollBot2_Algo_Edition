@@ -2,7 +2,7 @@ from aiogram.types import KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 personal_data_buttons = {"phone": "✅ Даю согласие на обработку персональных данных"}
-role_buttons = {"pupil": "👨‍💻 Ученик", "parent": "👨‍👩‍👧‍👦 Родитель", "teacher": "👨‍🏫 Учитель"}
+role_buttons = {"pupil": "👨‍💻 Ученик", "parent": "👨‍👩‍👧‍👦 Родитель"} #, "teacher": "👨‍🏫 Учитель"}
 
 
 def give_phone_keyboard():

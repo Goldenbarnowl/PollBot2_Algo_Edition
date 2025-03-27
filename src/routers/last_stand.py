@@ -11,9 +11,9 @@ last_stand_router = Router()
 
 
 async def db_checker(message: Message):
-    if message.text == role_buttons['teacher']:
-        message_thread = teacher_thread
-    elif message.text == role_buttons['parent']:
+    #if message.text == role_buttons['teacher']:
+        #message_thread = teacher_thread
+    if message.text == role_buttons['parent']:
         message_thread = parent_thread
     elif message.text == role_buttons['pupil']:
         message_thread = pupil_thread

@@ -26,11 +26,11 @@ class Secrets(BaseSettings):
 
 secrets = Secrets()
 
-channel_id = -1002406861510  # -1002406861510  # Канал для проверки
-admin_group = -1002354205786  # Группа админов
-pupil_thread = 5
-parent_thread = 4
-teacher_thread = 97
+channel_id = -1002500913902  # -1002406861510  # Канал для проверки
+admin_group = -1002500913902  # Группа админов
+pupil_thread = 2
+parent_thread = 3
+teacher_thread = 0
 
 # Инициализация подключения к базе данных Supabase
 url: str = secrets.supabase_url
@@ -48,5 +48,5 @@ teacher_data_repo = TeacherDataDataRepository(supabase)
 # Инициализация бота
 default = DefaultBotProperties(parse_mode='HTML', protect_content=False)
 bot = Bot(token=secrets.token, default=default)
-storage = RedisStorage.from_url(secrets.redis_url)
-dp = Dispatcher(storage=storage)
+#storage = RedisStorage.from_url(secrets.redis_url)
+dp = Dispatcher()#storage=storage)

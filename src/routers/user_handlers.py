@@ -57,14 +57,14 @@ async def handle_contact(message: Message, state: FSMContext):
             text="Нажмите на кнопку «Поделиться номером телефона»",
         )
         return
+    else:
+        users_data_repo.update_field(chat_id, "tg_phone", remove_leading_plus(contact.phone_number))
 
-    users_data_repo.update_field(chat_id, "tg_phone", remove_leading_plus(contact.phone_number))
-
-    await bot.send_message(
-        chat_id=chat_id,
-        text=NAME_REQUEST,
-        reply_markup=ReplyKeyboardRemove()
-    )
+        await bot.send_message(
+            chat_id=chat_id,
+            text=NAME_REQUEST,
+            reply_markup=ReplyKeyboardRemove()
+        )
 
 
 @user_router.message(StateFilter(User.wait_name))
