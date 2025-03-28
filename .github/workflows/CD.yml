@@ -22,9 +22,9 @@ jobs:
         port: ${{ secrets.VDS_PORT }}
         key: ${{ secrets.VDS_SSHKEY }}
         script: |
-          cd ~/PollBot/scripts
+          cd ~/PollBot2/scripts
           sh stop.sh
           cd ..
           git pull
-          cd ~/PollBot/scripts
+          cd ~/PollBot2/scripts
           sh start.sh
