@@ -1,3 +1,5 @@
+import re
+
 from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
@@ -45,7 +47,7 @@ async def handle_parent_role(message: Message, state: FSMContext):
 
     await bot.send_message(
         chat_id=chat_id,
-        text="Введите ваш контактный номер телефона.",
+        text="Введите Ваш контактный номер телефона.  (в формате 7XXXXXXXXXX)",
         reply_markup=ReplyKeyboardRemove()
     )
     # await bot.send_message(
@@ -81,6 +83,23 @@ async def handle_parent_phone(message: Message, state: FSMContext):
 async def handle_children_name(message: Message, state: FSMContext):
     chat_id = message.chat.id
     name = message.text
+
+    # Проверка на соответствие регулярному выражению
+    pattern = r'^[А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+$'
+
+    if not re.match(pattern, name):
+        await bot.send_message(
+            chat_id=chat_id,
+            text="Имя должно быть в формате «Фамилия Имя Отчество»."
+        )
+        return
+
+    if len(name) > 50:
+        await bot.send_message(
+            chat_id=chat_id,
+            text="Длина имени не должна превышать 50 символов."
+        )
+        return
 
     try:
         await state.set_state(Parent.wait_age)
@@ -189,7 +208,7 @@ async def handle_parent_school(message: Message, state: FSMContext):
         if school in collage_buttons:
             await bot.send_message(
                 chat_id=chat_id,
-                text="На каком курсе учится ваш ребенок?",
+                text="На каком курсе учится Ваш ребенок?",
                 reply_markup=grade_keyboard(5)
             )
         else:
@@ -221,7 +240,7 @@ async def handle_pupil_grade(message: Message, state: FSMContext):
         await state.set_state(Parent.wait_exam)
         await bot.send_message(
             chat_id=chat_id,
-            text="Рассматриваете ли вы для своего ребенка будущее в сфере информационных технологий?",
+            text="Рассматриваете ли Вы для своего ребенка будущее в сфере информационных технологий?",
             reply_markup=request_keyboard()
         )
     except:
@@ -443,7 +462,7 @@ async def handle_parent_q6(message: Message, state: FSMContext):
 async def handle_parent_q7(message: Message, state: FSMContext):
     chat_id = message.chat.id
     answer = message.text
-    if answer in  parents_answer_q7:
+    if answer in parents_answer_q7:
         await state.set_state(Parent.wait_q8)
         parent_data_repo.update_field(chat_id, "it_experience", answer)
         await bot.send_message(

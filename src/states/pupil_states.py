@@ -17,4 +17,5 @@ class Pupil(StatesGroup):
     wait_q6 = State()
     wait_group = State()
     wait_present = State()
+    test = State()
     end = State()
