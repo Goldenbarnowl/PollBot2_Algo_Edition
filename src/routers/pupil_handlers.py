@@ -362,6 +362,7 @@ async def handle_pupil_q2(message: Message, state: FSMContext):
             reply_markup=prof_test_keyboard(0)
         )
 
+        await state.update_data(final_str="")
         await state.update_data(prof_test=1)
         await state.update_data(a=0)
         await state.update_data(b=0)
@@ -405,9 +406,11 @@ async def handle_pupil_q2(message: Message, state: FSMContext):
 
 @pupil_router.message(StateFilter(Pupil.test))
 async def handle_pupil_test(message: Message, state: FSMContext):
-
     chat_id = message.chat.id
     number = await state.get_value("prof_test")
+    final_str = await state.get_value("final_str")
+    await state.update_data(final_str=final_str + message.text[0])
+
     if message.text[0] == "а":
         result = await state.get_value("a")
         await state.update_data(a=result+1)
@@ -459,12 +462,16 @@ async def handle_pupil_test(message: Message, state: FSMContext):
                 break
 
         if dominant_scale == "a":
+            category = "Гуманитарий"
             text = """По результатам теста Ваш профиль:\n\n🔹 Гуманитарии – вы мыслите образами, чувствуете слово и умеете находить смыслы. Ваша стихия – тексты, искусство, коммуникация. Но сегодня даже философы работают с нейросетями, лингвисты обучают алгоритмы, а историки оцифровывают архивы. Мир требует не только глубины, но и технологической гибкости."""
         elif dominant_scale == "b":
+            category = "Технический"
             text = """По результатам теста Ваш профиль:\n\n🔹 Точные науки – ваше преимущество в четкой логике, любви к формулам и системному мышлению. Математика становится языком будущего, а программирование – его грамматикой. Финансы, инженерия, аналитика – теперь это всегда диалог между человеком и кодом."""
         elif dominant_scale == "c":
+            category = "Естественные науки"
             text = """По результатам теста Ваш профиль:\n\n🔹 Естественные науки – вас вдохновляют законы природы, будь то ДНК или законы термодинамики. Современные исследования невозможны без вычислительных мощностей: расшифровка генома, климатические модели, новые материалы – всё это рождается на стыке лаборатории и алгоритмов."""
         else:
+            category = "IT"
             text = """По результатам теста Ваш профиль:\n\n🔹 IT – ваш ум схватывает логику алгоритмов, а технологии для вас – как родной язык. Вы видите красоту в стройности кода и чувствуете мощь цифровых решений. Но самые интересные задачи лежат на пересечении дисциплин: автоматизация гуманитарных исследований, математическое моделирование в науках, создание инструментов для новых открытий. Ваша сила – в умении превращать абстрактные идеи в работающие системы."""
 
 
@@ -479,6 +486,37 @@ async def handle_pupil_test(message: Message, state: FSMContext):
             reply_markup=prof_university_keyboard(dominant_scale)
         )
 
+        user_data = users_data_repo.get_user_by_chat_id(chat_id)
+        user_data = user_data.data[0]
+        pupil_data = pupil_data_repo.get_user_by_chat_id(chat_id)
+        pupil_data = pupil_data.data[0]
+        final_str = await state.get_value("final_str")
+        try:
+            text = (f"Пользователь {message.chat.id} - @{message.from_user.username}"
+                    f"\nФИО: {user_data['name']}"
+                    f"\nРоль: {role_buttons['pupil']}"
+                    f"\nТелефон: +{user_data['tg_phone']}"
+                    f"\n-------------------"
+                    f"\nВозраст {pupil_data['age']}"
+                    f"\nШкола: {pupil_data['school']}"
+                    f"\nКласс/Курс: {pupil_data['grade']}"
+                    f"\nУниверситеты: {pupil_data['university']}"
+                    f"\nСвязать жизнь с IT: {pupil_data['IT_live']}"
+                    f"\nФИО родителя: {pupil_data['parent_name']}"
+                    f"\nТелефон Родителя: +{pupil_data['parent_phone']}"
+                    f"\nРезультат тестирования: {category}"
+                    f"\nИстория тестирования: {final_str}")
+            await bot.edit_message_text(
+                chat_id=admin_group,
+                message_id=user_data['message'],
+                text=text)
+        except Exception as e:
+            print(e)
+            for line in text.split("\n"):
+                await bot.send_message(chat_id=admin_group,
+                                       message_thread_id=pupil_thread,
+                                       text=line
+                                       )
     else:
         await bot.send_message(
             chat_id=chat_id,
