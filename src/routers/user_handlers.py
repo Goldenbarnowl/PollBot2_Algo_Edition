@@ -1,3 +1,5 @@
+import re
+
 from aiogram import Router, F
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -73,6 +75,16 @@ async def handle_name(message: Message, state: FSMContext):
 
     chat_id = message.chat.id
     name = message.text
+
+    # Проверка на соответствие регулярному выражению
+    pattern = r'^[А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+$'
+
+    if not re.match(pattern, name):
+        await bot.send_message(
+            chat_id=chat_id,
+            text="Имя должно быть в формате «Фамилия Имя Отчество»."
+        )
+        return
 
     if name and len(name) <= 50:
         users_data_repo.update_field(chat_id, "name", name)

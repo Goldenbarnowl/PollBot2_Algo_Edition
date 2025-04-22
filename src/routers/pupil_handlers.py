@@ -13,13 +13,29 @@ from src.keyboards.parent_keyboards import keyboard_check_group_parents, check_g
 from src.keyboards.pupil_keyboard import pupil_age_keyboard, pupil_school_type_keyboard, school_types_buttons, \
     lyceum_keyboard, gymnasium_keyboard, school_keyboard, school_buttons, gymnasium_buttons, lyceum_buttons, \
     grade_keyboard, request_keyboard, answer_buttons, university_keyboard, university_list, keyboard_q3, keyboard_q5, \
-    keyboard_q6, answer_q3, keyboard_q4, answer_q4, answer_q5, answer_q6, collage_keyboard, collage_buttons
+    keyboard_q6, answer_q3, keyboard_q4, answer_q4, answer_q5, answer_q6, collage_keyboard, collage_buttons, \
+    prof_test_keyboard, prof_university_keyboard
 from src.keyboards.user_keyboards import role_buttons
 from src.routers.last_stand import db_checker
 from src.states.pupil_states import Pupil
 from src.states.user_states import User
 
 pupil_router = Router()
+
+prof_questions = [
+    "[1/12] Когда Вы смотрите на облако, что первое приходит в голову?",
+    "[2/12] Если бы Вы создавали новый язык, что было бы его основой?",
+    "[3/12] Какой эксперимент вас заинтриговал бы?",
+    "[4/12] Что бы Вы украли из будущего?",
+    "[5/12] Какую цитату Вы бы повесили в лаборатории?",
+    "[6/12] Какую аномалию Вы бы исследовали?",
+    "[7/12] Какую из этих книг Вы бы назвали 'учебником будущего'?",
+    "[8/12] Если бы наука была музыкой, какой инструмент отражал бы Ваш подход?",
+    "[9/12] Какой из этих запретов Вы бы нарушили ради науки?",
+    "[10/12] Как бы Вы объяснили свою работу 5-летнему ребёнку?",
+    "[11/12] Вам нужно запомнить 100-значное число. Ваш метод?",
+    "[12/12] Вы нашли старый дневник без дат. Как восстановите хронологию?"
+]
 
 
 @pupil_router.message(StateFilter(User.wait_role), F.text.in_(role_buttons['pupil']))
@@ -280,6 +296,8 @@ async def handle_check_university_next(callback: CallbackQuery, state: FSMContex
 async def handle_check_university(callback: CallbackQuery, state: FSMContext):
     chat_id = callback.message.chat.id
     university = callback.data
+
+
     try:
         state_data = await state.get_data()
         check_list = set(state_data['check_list'])
@@ -306,6 +324,17 @@ async def handle_pupil_q1(message: Message, state: FSMContext):
 
     chat_id = message.chat.id
     answer = message.text
+
+    # Проверка на соответствие регулярному выражению
+    pattern = r'^[А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+$'
+
+    if not re.match(pattern, answer):
+        await bot.send_message(
+            chat_id=chat_id,
+            text="Имя должно быть в формате «Фамилия Имя Отчество»."
+        )
+        return
+
     pupil_data_repo.update_field(chat_id, "parent_name", answer)
     await state.set_state(Pupil.wait_q2)
     await bot.send_message(
@@ -323,13 +352,21 @@ async def handle_pupil_q2(message: Message, state: FSMContext):
     answer = message.text
 
     if validate_phone_number(answer):
+
         pupil_data_repo.update_field(chat_id, "parent_phone", answer)
-        await state.set_state(Pupil.end)
+        await state.set_state(Pupil.test)
+
         await bot.send_message(
             chat_id=chat_id,
-            text=PUPIL_THX,
-            reply_markup=ReplyKeyboardRemove()
+            text=prof_questions[0],
+            reply_markup=prof_test_keyboard(0)
         )
+
+        await state.update_data(prof_test=1)
+        await state.update_data(a=0)
+        await state.update_data(b=0)
+        await state.update_data(c=0)
+        await state.update_data(d=0)
 
         user_data = users_data_repo.get_user_by_chat_id(chat_id)
         user_data = user_data.data[0]
@@ -366,7 +403,90 @@ async def handle_pupil_q2(message: Message, state: FSMContext):
         )
 
 
+@pupil_router.message(StateFilter(Pupil.test))
+async def handle_pupil_test(message: Message, state: FSMContext):
 
+    chat_id = message.chat.id
+    number = await state.get_value("prof_test")
+    if message.text[0] == "а":
+        result = await state.get_value("a")
+        await state.update_data(a=result+1)
+    elif message.text[0] == "б":
+        result = await state.get_value("b")
+        await state.update_data(b=result+1)
+    elif message.text[0] == "в":
+        result = await state.get_value("c")
+        await state.update_data(c=result+1)
+    elif message.text[0] == "г":
+        result = await state.get_value("d")
+        await state.update_data(d=result+1)
+    else:
+        await bot.send_message(
+            chat_id=chat_id,
+            text=ERROR_BUTTON
+        )
+        return
+
+
+    if number == len(prof_questions):
+        a = await state.get_value("a")
+        b = await state.get_value("b")
+        c = await state.get_value("c")
+        d = await state.get_value("d")
+
+        # Список шкал в порядке приоритета (от высшего к низшему)
+        priority_order = ['d', 'b', 'c', 'a']
+
+        # Находим максимальное значение
+        max_score = max(a, b, c, d)
+
+        # Собираем все шкалы с максимальным значением
+        max_scales = []
+        if a == max_score:
+            max_scales.append('a')
+        if b == max_score:
+            max_scales.append('b')
+        if c == max_score:
+            max_scales.append('c')
+        if d == max_score:
+            max_scales.append('d')
+
+        # Выбираем шкалу с наивысшим приоритетом
+        dominant_scale = None
+        for scale in priority_order:
+            if scale in max_scales:
+                dominant_scale = scale
+                break
+
+        if dominant_scale == "a":
+            text = """По результатам теста Ваш профиль:\n\n🔹 Гуманитарии – вы мыслите образами, чувствуете слово и умеете находить смыслы. Ваша стихия – тексты, искусство, коммуникация. Но сегодня даже философы работают с нейросетями, лингвисты обучают алгоритмы, а историки оцифровывают архивы. Мир требует не только глубины, но и технологической гибкости."""
+        elif dominant_scale == "b":
+            text = """По результатам теста Ваш профиль:\n\n🔹 Точные науки – ваше преимущество в четкой логике, любви к формулам и системному мышлению. Математика становится языком будущего, а программирование – его грамматикой. Финансы, инженерия, аналитика – теперь это всегда диалог между человеком и кодом."""
+        elif dominant_scale == "c":
+            text = """По результатам теста Ваш профиль:\n\n🔹 Естественные науки – вас вдохновляют законы природы, будь то ДНК или законы термодинамики. Современные исследования невозможны без вычислительных мощностей: расшифровка генома, климатические модели, новые материалы – всё это рождается на стыке лаборатории и алгоритмов."""
+        else:
+            text = """По результатам теста Ваш профиль:\n\n🔹 IT – ваш ум схватывает логику алгоритмов, а технологии для вас – как родной язык. Вы видите красоту в стройности кода и чувствуете мощь цифровых решений. Но самые интересные задачи лежат на пересечении дисциплин: автоматизация гуманитарных исследований, математическое моделирование в науках, создание инструментов для новых открытий. Ваша сила – в умении превращать абстрактные идеи в работающие системы."""
+
+
+        await bot.send_message(
+            chat_id=chat_id,
+            text="Спасибо за прохождение опроса! 🥳",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        await bot.send_message(
+            chat_id=chat_id,
+            text=text + "\n\n🏫 Рекомендуемые ВУЗы:",
+            reply_markup=prof_university_keyboard(dominant_scale)
+        )
+
+    else:
+        await bot.send_message(
+            chat_id=chat_id,
+            text=prof_questions[number],
+            reply_markup=prof_test_keyboard(number)
+        )
+
+        await state.update_data(prof_test=number + 1)
 
 # @pupil_router.message(StateFilter(Pupil.wait_q3))
 # async def handle_pupil_q3(message: Message, state: FSMContext):
