@@ -3,7 +3,7 @@ import re
 from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery, FSInputFile
 
 from config import pupil_data_repo, bot, admin_group, pupil_thread, users_data_repo
 from phrases import PUPIL_AGE, PUPIL_ERROR_AGE, SCHOOL_TYPE, SCHOOL_REQUEST, ERROR_SCHOOL, GRADE_REQUEST, ERROR_GRADE, \
@@ -14,7 +14,7 @@ from src.keyboards.pupil_keyboard import pupil_age_keyboard, pupil_school_type_k
     lyceum_keyboard, gymnasium_keyboard, school_keyboard, school_buttons, gymnasium_buttons, lyceum_buttons, \
     grade_keyboard, request_keyboard, answer_buttons, university_keyboard, university_list, keyboard_q3, keyboard_q5, \
     keyboard_q6, answer_q3, keyboard_q4, answer_q4, answer_q5, answer_q6, collage_keyboard, collage_buttons, \
-    prof_test_keyboard, prof_university_keyboard
+    prof_test_keyboard, prof_university_keyboard, events_keyboard
 from src.keyboards.user_keyboards import role_buttons
 from src.routers.last_stand import db_checker
 from src.states.pupil_states import Pupil
@@ -490,6 +490,20 @@ async def handle_pupil_test(message: Message, state: FSMContext):
             text=text + "\n\n🏫 Рекомендуемые ВУЗы:",
             reply_markup=prof_university_keyboard(dominant_scale)
         )
+        await bot.send_photo(
+            chat_id=chat_id,
+            photo=FSInputFile("./Bot_photo.jpg"),
+            caption="""Как и обещал — высылаю тебе подборку <b>бесплатных мероприятий</b>. Здесь ты сможешь:
+🔹 Прокачать свои навыки,
+🔹 Поработать в команде единомышленников,
+🔹 А может, даже найти будущее место работы.
+
+Лови крутые ближайшие проекты:""",
+            reply_markup=events_keyboard(),
+            parse_mode="HTML"
+        )
+
+        await state.set_state(User.end)
 
         user_data = users_data_repo.get_user_by_chat_id(chat_id)
         user_data = user_data.data[0]

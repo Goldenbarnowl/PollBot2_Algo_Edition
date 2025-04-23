@@ -492,3 +492,23 @@ def prof_university_keyboard(university_type):
         keyboard_inline.row(InlineKeyboardButton(text="Автомобильно-дорожный университет | СибАДИ", url="https://t.me/sibadilife"))
     return keyboard_inline.as_markup()
 
+
+event_name_list = ["🔥 Код Будущего - подготовительный этап",
+                   "Хакатон «Технологии искусственного интеллекта и бизнес-аналитики в больших данных»",
+                   "Хакатон «Город героев» для школьников и студентов",
+                   "Буткемп для начинающих менеджеров"]
+
+
+def events_keyboard():
+    inline = InlineKeyboardBuilder()
+    inline.row(InlineKeyboardButton(text=event_name_list[0], callback_data="e_1"))
+    inline.row(InlineKeyboardButton(text=event_name_list[1], callback_data="e_2"))
+    inline.row(InlineKeyboardButton(text=event_name_list[2], callback_data="e_3"))
+    inline.row(InlineKeyboardButton(text=event_name_list[3], callback_data="e_4"))
+    return inline.as_markup()
+
+
+def event_info_keyboard(text: str, url: str):
+    inline = InlineKeyboardBuilder()
+    inline.row(InlineKeyboardButton(text=text, url=url))
+    return inline.as_markup()
