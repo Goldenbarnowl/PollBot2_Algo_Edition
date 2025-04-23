@@ -429,7 +429,7 @@ prof_answers = [
     ],
     [
         "а) Виолончель — глубокий, интроспективный, с множеством интерпретаций",
-        "б) Орган — архитектурно сложный, с бесконечными комбинациями",
+        "б) Оргáн — архитектурно сложный, с бесконечными комбинациями",
         "в) Электронные сэмплы природных звуков, которые нельзя повторить",
         "г) Алгоритм, генерирующий мелодии, непредсказуемые даже для создателя"
     ],
@@ -480,7 +480,7 @@ def prof_university_keyboard(university_type):
         keyboard_inline.row(InlineKeyboardButton(text="Университет имени Ф.М.Достоевского | ОмГУ", url="https://t.me/omsuru"))
     elif university_type == "b":
         keyboard_inline.row(InlineKeyboardButton(text="Технический университет | ОмГТУ", url="https://t.me/omgtu_live"))
-        keyboard_inline.row(InlineKeyboardButton(text="Университет путей и сообщения | ОмГУПС", url="https://t.me/omgups_fdpipo"))
+        keyboard_inline.row(InlineKeyboardButton(text="Университет путей сообщения | ОмГУПС", url="https://t.me/omgups_fdpipo"))
         keyboard_inline.row(InlineKeyboardButton(text="Автомобильно-дорожный университет | СибАДИ", url="https://t.me/sibadilife"))
     elif university_type == "c":
         keyboard_inline.row(InlineKeyboardButton(text="Медицинский университет | ОмГМУ", url="https://t.me/osmu_official"))
