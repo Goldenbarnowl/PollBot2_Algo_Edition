@@ -35,11 +35,16 @@ async def command_start(message: Message, state: FSMContext):
             users_data_repo.insert_field(chat_id, 'reg_date', str(message.date))
     except:
         pass
+    await bot.send_photo(
+        chat_id=chat_id,
+        photo=FSInputFile("./Bot_photo.jpg")
+    )
     await bot.send_document(
         chat_id=chat_id,
         document=FSInputFile("./Политика конфиденциальности.docx.pdf"),
         caption=PERS_DATA_REQUEST,
-        reply_markup=give_phone_keyboard()
+        reply_markup=give_phone_keyboard(),
+        parse_mode="HTML"
     )
 
 
