@@ -3,7 +3,7 @@ import re
 from aiogram import Router, F
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery, FSInputFile
 from aiogram.utils.markdown import hlink
 
 from config import parent_data_repo, pupil_data_repo, bot, pchildren_data_repo, admin_group, parent_thread, \
@@ -20,7 +20,8 @@ from src.keyboards.parent_keyboards import new_children_keyboard, new_children_b
 from src.keyboards.pupil_keyboard import pupil_school_type_keyboard, school_types_buttons, school_keyboard, \
     lyceum_keyboard, gymnasium_keyboard, school_buttons, gymnasium_buttons, lyceum_buttons, grade_keyboard, \
     request_keyboard, answer_buttons, university_keyboard, university_list, answer_q6, keyboard_q6, answer_q5, \
-    keyboard_q5, answer_q4, keyboard_q4, answer_q3, keyboard_q3, pupil_age_keyboard, collage_keyboard, collage_buttons
+    keyboard_q5, answer_q4, keyboard_q4, answer_q3, keyboard_q3, pupil_age_keyboard, collage_keyboard, collage_buttons, \
+    events_keyboard
 from src.keyboards.user_keyboards import role_buttons
 from src.routers.last_stand import db_checker
 from src.routers.pupil_handlers import validate_phone_number
@@ -509,7 +510,22 @@ async def handle_parent_q9(message: Message, state: FSMContext):
             reply_markup=ReplyKeyboardRemove()
         )
 
-        await state.set_state(Parent.end)
+        await bot.send_photo(
+            chat_id=chat_id,
+            photo=FSInputFile("./Bot_photo.jpg"),
+            caption="""Как и обещал, отправляю Вам подборку <b>бесплатных мероприятий</b> для вашего ребенка. Здесь ребенок сможет:
+
+🔹 Получить новые знания и навыки
+
+🔹 Найти команду увлеченных сверстников
+
+🔹 Возможно, даже определиться с будущей профессией
+
+🔹 Предлагаю ознакомиться с интересными ближайшими проектами:""",
+            reply_markup=events_keyboard()
+        )
+
+        await state.set_state(User.end)
 
         user_data = users_data_repo.get_user_by_chat_id(chat_id)
         user_data = user_data.data[0]
