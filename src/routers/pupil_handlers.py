@@ -1,3 +1,4 @@
+import asyncio
 import re
 
 from aiogram import Router, F
@@ -14,7 +15,8 @@ from src.keyboards.pupil_keyboard import pupil_age_keyboard, pupil_school_type_k
     lyceum_keyboard, gymnasium_keyboard, school_keyboard, school_buttons, gymnasium_buttons, lyceum_buttons, \
     grade_keyboard, request_keyboard, answer_buttons, university_keyboard, university_list, keyboard_q3, keyboard_q5, \
     keyboard_q6, answer_q3, keyboard_q4, answer_q4, answer_q5, answer_q6, collage_keyboard, collage_buttons, \
-    prof_test_keyboard, prof_university_keyboard, events_keyboard
+    prof_test_keyboard, prof_university_keyboard, events_keyboard, omaviation_keyboard, faculti_omaviat, \
+    omkyipt_keyboard, faculti_omkyipt
 from src.keyboards.user_keyboards import role_buttons
 from src.routers.last_stand import db_checker
 from src.states.pupil_states import Pupil
@@ -38,6 +40,40 @@ prof_questions = [
 ]
 
 
+async def background_task(message: Message):
+    await asyncio.sleep(3600)
+    response = pupil_data_repo.get_user_by_chat_id(message.chat.id)
+    user = response.data[0]
+    if user["parent_phone"] is None:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="""Ой-ой, кажется, кто-то забыл завершить регистрацию! 🥺
+А ведь без этого даже моё digital-сердечко не может биться спокойно — переживаю за тебя! 💙
+
+Давай исправим это скорее, чтобы:
+✨ Я мог помогать тебе в полную силу
+✨ Твоё учебное заведение гордилось ответственными учениками
+✨ Никто не подумал, что здесь учат забывать важные дела
+
+Всего пару кликов — и ты молодец! 😊"""
+        )
+    await asyncio.sleep(82800)
+    response = pupil_data_repo.get_user_by_chat_id(message.chat.id)
+    user = response.data[0]
+    if user["parent_phone"] is None:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="""Ой, кажется, мы с тобой забыли одну важную вещь!
+Без завершённой регистрации я не смогу помогать тебе на все 100% — а так хочется! 💙
+
+Давай быстренько это исправим, чтобы:
+🐣 Ни один ботик не остался грустным
+🎓 Твоё учебное заведение могло ставить тебя в пример
+📝 Все важные данные были надёжно сохранены
+
+Это займёт всего минуточку — я в тебя верю! ✨"""
+        )
+
 @pupil_router.message(StateFilter(User.wait_role), F.text.in_(role_buttons['pupil']))
 async def handle_pupil_role(message: Message, state: FSMContext):
     """Обрабатывает роль пользователя - ученик"""
@@ -59,6 +95,7 @@ async def handle_pupil_role(message: Message, state: FSMContext):
         reply_markup=pupil_age_keyboard()
     )
     await db_checker(message)
+    await asyncio.create_task(background_task(message))
 
 
 @pupil_router.message(StateFilter(Pupil.wait_age))
@@ -183,12 +220,40 @@ async def handle_pupil_grade(message: Message, state: FSMContext):
             pupil_data_repo.update_field(chat_id, "grade", grade)
         else:
             raise ValueError
+
+        try:
+            response = pupil_data_repo.get_user_by_chat_id(chat_id)
+            school = response.data[0]["school"]
+            if school == "📌 Омский авиационный колледж имени Н.Е. Жуковского":
+                await state.set_state(Pupil.wait_faculty)
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="Выбери своё направление в колледже из списка:",
+                    reply_markup=omaviation_keyboard()
+                )
+                return
+            elif school == "📌 Омский государственный колледж управления и профессиональных технологий":
+                await state.set_state(Pupil.wait_faculty)
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="Выбери своё направление в колледже из списка:",
+                    reply_markup=omkyipt_keyboard()
+                )
+                return
+
+        except:
+            pass
+
+
         await state.set_state(Pupil.wait_exam)
         await bot.send_message(
             chat_id=chat_id,
             text="Планируешь ли связать свою жизнь с ИТ?",
             reply_markup=request_keyboard()
         )
+
+
+
     except:
         await bot.send_message(
             chat_id=chat_id,
@@ -223,6 +288,33 @@ async def handle_pupil_exam(message: Message, state: FSMContext):
             text="Ошибка: воспользуйся кнопками для продолжения."
         )
 
+
+@pupil_router.message(StateFilter(Pupil.wait_faculty))
+async def handle_pupil_faculty(message: Message, state: FSMContext):
+    """Обрабатывает вопрос о сдаче экзамена пользователя - ученик"""
+
+    chat_id = message.chat.id
+    exam = message.text
+    if exam in faculti_omaviat or exam in faculti_omkyipt:
+        pupil_data_repo.update_field(chat_id, "IT_live", exam)
+        await state.set_state(Pupil.wait_university)
+        await state.update_data(check_list=list())
+        await bot.send_message(
+            chat_id=chat_id,
+            text="Укажи, в какой ВУЗ или СУЗ планируешь поступать. (не более 3 вариантов)",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        await bot.send_message(
+            chat_id=chat_id,
+            text="Выбери интересующие тебя образовательные организации высшего и среднего профессионального образования и нажми кнопку \"Продолжить\".",
+            reply_markup=university_keyboard(set())
+        )
+
+    else:
+        await bot.send_message(
+            chat_id=chat_id,
+            text="Ошибка: воспользуйся кнопками для продолжения."
+        )
 
 # @pupil_router.message(StateFilter(Pupil.wait_arrival))
 # async def handle_pupil_university(message: Message, state: FSMContext):
@@ -510,6 +602,10 @@ async def handle_pupil_test(message: Message, state: FSMContext):
         pupil_data = pupil_data_repo.get_user_by_chat_id(chat_id)
         pupil_data = pupil_data.data[0]
         final_str = await state.get_value("final_str")
+        if pupil_data['IT_live'] == "✅ Да" or pupil_data['IT_live'] == "❌ Нет":
+            life = f"Связать жизнь с IT: {pupil_data['IT_live']}"
+        else:
+            life = f"Направление колледжа: {pupil_data['IT_live']}"
         try:
             text = (f"Пользователь {message.chat.id} - @{message.from_user.username}"
                     f"\nФИО: {user_data['name']}"
@@ -520,8 +616,8 @@ async def handle_pupil_test(message: Message, state: FSMContext):
                     f"\nШкола: {pupil_data['school']}"
                     f"\nКласс/Курс: {pupil_data['grade']}"
                     f"\nУниверситеты: {pupil_data['university']}"
-                    f"\nСвязать жизнь с IT: {pupil_data['IT_live']}"
-                    f"\nФИО родителя: {pupil_data['parent_name']}"
+                    f"\n{life}"
+                    f"ФИО Родителя: {pupil_data['parent_name']}"
                     f"\nТелефон Родителя: +{pupil_data['parent_phone']}"
                     f"\nРезультат тестирования: {category}"
                     f"\nИстория тестирования: {final_str}")

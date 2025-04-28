@@ -6,6 +6,7 @@ class Pupil(StatesGroup):
     wait_school_type = State()
     wait_school = State()
     wait_grade = State()
+    wait_faculty = State()
     wait_exam = State()
     wait_arrival = State()
     wait_university = State()
