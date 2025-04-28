@@ -617,7 +617,7 @@ async def handle_pupil_test(message: Message, state: FSMContext):
                     f"\nКласс/Курс: {pupil_data['grade']}"
                     f"\nУниверситеты: {pupil_data['university']}"
                     f"\n{life}"
-                    f"ФИО Родителя: {pupil_data['parent_name']}"
+                    f"\nФИО Родителя: {pupil_data['parent_name']}"
                     f"\nТелефон Родителя: +{pupil_data['parent_phone']}"
                     f"\nРезультат тестирования: {category}"
                     f"\nИстория тестирования: {final_str}")
