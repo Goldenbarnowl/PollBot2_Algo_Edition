@@ -153,21 +153,26 @@ async def spam_attack(message: Message):
     counter = 0
     await bot.send_message(chat_id=message.chat.id,
                            text=spamtext,
-                           parse_mode='HTML')
+                           parse_mode='HTML',
+                           reply_markup=events_keyboard())
 
     for userdata in data:
         try:
-            await bot.send_photo(chat_id=userdata['chat_id'],
-                                 text=spamtext,
-                                 parse_mode='HTML',
-                                 reply_markup=events_keyboard())
+            await bot.send_message(chat_id=userdata['chat_id'],
+                                   text=spamtext,
+                                   parse_mode='HTML',
+                                   reply_markup=events_keyboard())
             counter += 1
+            if counter % 100 == 0:
+                await asyncio.sleep(5)
         except Exception as e:
             await bot.send_message(chat_id=message.chat.id,
                                    text=f"{counter} {userdata['chat_id']} - не отправлено\n {str(e)})",
                                    parse_mode='HTML')
 
-    print('Отправлено:', counter)
+    await bot.send_message(chat_id=message.chat.id,
+                           text=f"Отправлено {counter}",
+                           parse_mode='HTML')
 
 
 @last_stand_router.message(F.chat.id != admin_group)
