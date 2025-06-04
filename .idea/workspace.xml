@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="76cee8dc-8f15-43cd-8407-161f34176e0b" name="Changes" comment="v5.1">
+    <list default="true" id="76cee8dc-8f15-43cd-8407-161f34176e0b" name="Changes" comment="v5.3">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/routers/last_stand.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/routers/last_stand.py" afterDir="false" />
     </list>
@@ -293,11 +293,26 @@
       <option name="project" value="LOCAL" />
       <updated>1749025247040</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="v5.2">
+      <option name="closed" value="true" />
+      <created>1749046930900</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1749046930900</updated>
+    </task>
+    <task id="LOCAL-00026" summary="v5.3">
+      <option name="closed" value="true" />
+      <created>1749047117603</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1749047117603</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="v1.0" />
     <MESSAGE value="v2.0" />
     <MESSAGE value="v2.1" />
     <MESSAGE value="v2.2" />
@@ -321,6 +336,8 @@
     <MESSAGE value="v4.5" />
     <MESSAGE value="v5" />
     <MESSAGE value="v5.1" />
-    <option name="LAST_COMMIT_MESSAGE" value="v5.1" />
+    <MESSAGE value="v5.2" />
+    <MESSAGE value="v5.3" />
+    <option name="LAST_COMMIT_MESSAGE" value="v5.3" />
   </component>
 </project>
