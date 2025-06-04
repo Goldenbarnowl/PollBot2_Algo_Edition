@@ -132,47 +132,33 @@ async def handle_event_end(call: Message):
     )
 
 
+spamtext = """🎉 Новые мероприятия в Омске!
+Мы обновили список событий — теперь в боте доступны свежие мероприятия, которые пройдут в Омске в ближайшее время!"""
+
+
 @last_stand_router.message(Command('spamtest'), F.chat.id == 820176381)
 async def spam_attack(message: Message):
-    text = """🎉 Новые мероприятия в Омске!
-Мы обновили список событий — теперь в боте доступны свежие мероприятия, которые пройдут в Омске в ближайшее время!"""
     response = supabase.table('UserData').select('*').execute()
     data = response.data
-    counter = 0
     await bot.send_message(chat_id=message.chat.id,
-                           text=text,
-                           parse_mode='HTML')
-
-    for userdata in data:
-        try:
-            await bot.send_photo(chat_id=userdata['chat_id'],
-                                 text=text,
-                                 parse_mode='HTML',
-                                 reply_markup=events_keyboard())
-            counter += 1
-        except Exception as e:
-            await bot.send_message(chat_id=message.chat.id,
-                                   text=f"{counter} {userdata['chat_id']} - не отправлено\n {str(e)})",
-                                   parse_mode='HTML')
-
-    print('Отправлено:', counter)
+                           text=spamtext,
+                           parse_mode='HTML',
+                           reply_markup=events_keyboard())
 
 
 @last_stand_router.message(Command('spam'), F.chat.id == 820176381)
 async def spam_attack(message: Message):
-    text = """🎉 Новые мероприятия в Омске!
-Мы обновили список событий — теперь в боте доступны свежие мероприятия, которые пройдут в Омске в ближайшее время!"""
     response = supabase.table('UserData').select('*').execute()
     data = response.data
     counter = 0
     await bot.send_message(chat_id=message.chat.id,
-                           text=text,
+                           text=spamtext,
                            parse_mode='HTML')
 
     for userdata in data:
         try:
             await bot.send_photo(chat_id=userdata['chat_id'],
-                                 text=text,
+                                 text=spamtext,
                                  parse_mode='HTML',
                                  reply_markup=events_keyboard())
             counter += 1
