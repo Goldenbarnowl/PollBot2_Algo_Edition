@@ -36,7 +36,7 @@ async def db_checker(message: Message):
     users_data_repo.update_field(message.chat.id, "message", adm_mes.message_id)
 
 
-@last_stand_router.callback_query(User.end)
+@last_stand_router.callback_query(F.data.regexp(r"^e_\d+$"))
 async def handle_event_end(call: Message):
     event_dict = {
         "e_1": """<b>Бесплатные курсы программирования Python для школьников 8-11 классов</b>
