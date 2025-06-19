@@ -504,7 +504,6 @@ event_name_list = ["🔥 Код Будущего - подготовительн�
 
 def events_keyboard():
     inline = InlineKeyboardBuilder()
-    inline.row(InlineKeyboardButton(text=event_name_list[0], callback_data="e_1"))
     inline.row(InlineKeyboardButton(text=event_name_list[1], callback_data="e_2"))
     inline.row(InlineKeyboardButton(text=event_name_list[2], callback_data="e_3"))
     inline.row(InlineKeyboardButton(text=event_name_list[3], callback_data="e_4"))
